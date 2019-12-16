@@ -2,69 +2,33 @@
 #include "mnist.h"
 #include "rwfile.h"
 #include <functional>
-
-static const double testdata[] = { // "7"
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.329412, 0.725490, 0.623529, 0.592157, 0.235294, 0.141176, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.870588, 0.996078, 0.996078, 0.996078, 0.996078, 0.945098, 0.776471, 0.776471, 0.776471, 0.776471, 0.776471, 0.776471, 0.776471, 0.776471, 0.666667, 0.203922, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.262745, 0.447059, 0.282353, 0.447059, 0.639216, 0.890196, 0.996078, 0.882353, 0.996078, 0.996078, 0.996078, 0.980392, 0.898039, 0.996078, 0.996078, 0.549020, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.066667, 0.258824, 0.054902, 0.262745, 0.262745, 0.262745, 0.231373, 0.082353, 0.925490, 0.996078, 0.415686, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.325490, 0.992157, 0.819608, 0.070588, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.086275, 0.913725, 1.000000, 0.325490, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.505882, 0.996078, 0.933333, 0.172549, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.231373, 0.976471, 0.996078, 0.243137, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.521569, 0.996078, 0.733333, 0.019608, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.035294, 0.803922, 0.972549, 0.227451, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.494118, 0.996078, 0.713726, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.294118, 0.984314, 0.941176, 0.223529, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.074510, 0.866667, 0.996078, 0.650980, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.011765, 0.796078, 0.996078, 0.858824, 0.137255, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.149020, 0.996078, 0.996078, 0.301961, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.121569, 0.878431, 0.996078, 0.450980, 0.003922, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.521569, 0.996078, 0.996078, 0.203922, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.239216, 0.949020, 0.996078, 0.996078, 0.203922, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.474510, 0.996078, 0.996078, 0.858824, 0.156863, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.474510, 0.996078, 0.811765, 0.070588, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-	0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
-};
-
+#include <random>
 
 class TwoLayerNet {
 public:
 	Layer layer1;
 	Layer layer2;
+
 	TwoLayerNet()
 	{
-		layer1.weight.make(784, 50);
-		layer1.bias.make(1, 50);
-		layer2.weight.make(50, 10);
-		layer2.bias.make(1, 10);
+		int input = 28 * 28;
+		int hidden = 50;
+		int output = 10;
+		layer1.reset(input, hidden);
+		layer2.reset(hidden, output);
 	}
-	void predict(Matrix const &x, Matrix *out)
+
+	Matrix predict(Matrix const &x)
 	{
-		*out = {};
-		Matrix a1;
-		Matrix a2;
-
-		x.dot(layer1.weight, &a1);
-		a1.add(layer1.bias);
-		a1.sigmoid();
-
-		a1.dot(layer2.weight, &a2);
-		a2.add(layer2.bias);
-		a2.softmax(out);
+		return x.dot(layer1.weight).add(layer1.bias).sigmoid()
+				.dot(layer2.weight).add(layer2.bias).softmax();
 	}
-	double accuracy(Matrix const &x, Matrix const &t)
+
+	Matrix::real_t accuracy(Matrix const &x, Matrix const &t)
 	{
 		auto argmax = [](Matrix const &a, int row){
 			int i = 0;
-			for (size_t j = 1; j < a.col; j++) {
+			for (size_t j = 1; j < a.cols(); j++) {
 				if (a.at(row, j) > a.at(row, i)) {
 					i = j;
 				}
@@ -72,9 +36,8 @@ public:
 			return i;
 		};
 
-		int rows = std::min(x.row, t.row);
-		Matrix y;
-		predict(x, &y);
+		int rows = std::min(x.rows(), t.rows());
+		Matrix y = predict(x);
 		int acc = 0;
 		for (int row = 0; row < rows; row++) {
 			auto a = argmax(y, row);
@@ -83,134 +46,78 @@ public:
 				acc++;
 			}
 		}
-		return (double)acc / rows;
-	}
-
-	double loss(Matrix const &x, Matrix const &t)
-	{
-		Matrix y;
-		predict(x, &y);
-		double e = y.cross_entropy_error(t);
-		return e;
-	}
-
-	void numerical_gradient(std::function<double()> const &f, Matrix *x, Matrix *out)
-	{
-		double h = 1e-4;
-		out->make(x->row, x->col);
-		for (size_t i = 0; i < x->array.size(); i++) {
-			double v = x->array[i];
-			x->array[i] = v + h;
-			double a = f();
-			x->array[i] = v - h;
-			double b = f();
-			out->array[i] = (a - b) / (h * 2);
-			x->array[i] = v;
-		}
-	}
-
-	void numerical_gradient(Matrix const &x, Matrix const &t, std::map<std::string, Matrix> *out)
-	{
-		Matrix w1, b1, w2, b2;
-		auto Do = [&](std::string const &name, Matrix *z){
-			auto it = out->insert(out->end(), std::pair<std::string, Matrix>(name, {}));
-			numerical_gradient([&](){ return loss(x, t); }, z, &it->second);
-		};
-		Do("w1", &layer1.weight);
-		Do("b1", &layer1.bias);
-		Do("w2", &layer2.weight);
-		Do("b2", &layer2.bias);
+		return (Matrix::real_t)acc / rows;
 	}
 
 	void gradient(Matrix const &x, Matrix const &t, std::map<std::string, Matrix> *out)
 	{
 		out->clear();
-		int batch_num = x.row;
+		int batch_num = x.rows();
 
-		Matrix a1;
-		x.dot(layer1.weight, &a1);
-		a1.add(layer1.bias);
-		Matrix z1;
-		a1.sigmoid(&z1);
-		Matrix a2;
-		z1.dot(layer2.weight, &a2);
-		a2.add(layer2.bias);
-		Matrix y;
-		a2.softmax(&y);
+		Matrix a1 = x.dot(layer1.weight).add(layer1.bias);
+		Matrix z1 = a1.sigmoid();
+		Matrix a2 = z1.dot(layer2.weight).add(layer2.bias);
+		Matrix y = a2.softmax();
 
-		Matrix dy = y;
-		dy.sub(t);
-		dy.div(batch_num);
-		Matrix z1t;
-		z1.transpose(&z1t);
+		Matrix dy = y.sub(t).div(batch_num);
 
-		auto iw2 = out->insert(out->end(), std::pair<std::string, Matrix>("w2", {}));
-		z1t.dot(dy, &iw2->second);
+		(*out)["w2"] = z1.transpose().dot(dy);
+		(*out)["b2"] = dy.sum();
 
-		auto ib2 = out->insert(out->end(), std::pair<std::string, Matrix>("b2", {}));
-		dy.sum(&ib2->second);
+		Matrix w2t = layer2.weight.transpose();
+		Matrix dz1 = dy.dot(w2t);
+		Matrix da1 = a1.sigmoid_grad().mul(dz1);
 
-		Matrix w2t;
-		layer2.weight.transpose(&w2t);
-
-		Matrix dz1;
-		dy.dot(w2t, &dz1);
-
-		Matrix da1;
-		a1.sigmoid_grad(&da1);
-		da1.mul(dz1);
-
-		Matrix xt;
-		x.transpose(&xt);
-
-		auto iw1 = out->insert(out->end(), std::pair<std::string, Matrix>("w1", {}));
-		xt.dot(da1, &iw1->second);
-
-		auto ib1 = out->insert(out->end(), std::pair<std::string, Matrix>("b1", {}));
-		da1.sum(&ib1->second);
-
+		(*out)["w1"] = x.transpose().dot(da1);
+		(*out)["b1"] = da1.sum();
 	}
 };
 
 int main()
 {
-//	x.make(1, 28 * 28, testdata);
-//	t.make(1, 10, { 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 });
-
 	mnist::DataSet train;
 	if (!train.load("train-labels-idx1-ubyte", "train-images-idx3-ubyte")) {
 		fprintf(stderr, "failed to load mnist images and labels\n");
 		exit(1);
 	}
 
+	mnist::DataSet t10k;
+	if (!t10k.load("t10k-labels-idx1-ubyte", "t10k-images-idx3-ubyte")) {
+		fprintf(stderr, "failed to load mnist images and labels\n");
+		exit(1);
+	}
+
 	int iteration = 10000;
 	int batch_size = 100;
+	Matrix::real_t learning_rate = 0.1;
 
-	auto Initialize = [](Matrix *a){
-		for (size_t i = 0; i < a->array.size(); i++) {
-			auto RAND = [](){
-				return (double)rand() / RAND_MAX - 0.5;
-			};
-			a->array[i] = ((RAND() + RAND() + RAND() + RAND()) / 4.0) / 16;
+	std::random_device seed_gen;
+	std::default_random_engine engine(seed_gen());
+	std::normal_distribution<Matrix::real_t> dist(0.0, 0.1);
+	auto Initialize = [&](Matrix *a){
+		auto Rand = [&](){
+			return dist(engine);
+		};
+		for (size_t i = 0; i < a->size(); i++) {
+			a->data()[i] = Rand();
 		}
 	};
-
-	double learning_rate = 0.1;
 
 	TwoLayerNet net;
 	Initialize(&net.layer2.weight);
 	Initialize(&net.layer1.weight);
 
+	unsigned int k = 0;
 	for (int i = 0; i < iteration; i++) {
 		Matrix x_batch;
 		Matrix t_batch;
 		for (int j = 0; j < batch_size; j++) {
 			Matrix x, t;
-			int k = rand() % train.data.count;
+			k = (k + rand()) % train.size();
 			train.image_to_matrix(k, &x);
 			train.label_to_matrix(k, &t);
-			x_batch.add_row(x);
-			t_batch.add_row(t);
+			x_batch.add_rows(x);
+			t_batch.add_rows(t);
 		}
 
 		{
@@ -221,80 +128,36 @@ int main()
 			Matrix b1 = grads["b1"];
 			Matrix w2 = grads["w2"];
 			Matrix b2 = grads["b2"];
-			w1.mul(learning_rate);
-			b1.mul(learning_rate);
-			w2.mul(learning_rate);
-			b2.mul(learning_rate);
-			net.layer1.weight.sub(w1);
-			net.layer1.bias.sub(b1);
-			net.layer2.weight.sub(w2);
-			net.layer2.bias.sub(b2);
+			w1 = w1.mul(learning_rate);
+			b1 = b1.mul(learning_rate);
+			w2 = w2.mul(learning_rate);
+			b2 = b2.mul(learning_rate);
+			net.layer1.weight = net.layer1.weight.sub(w1);
+			net.layer1.bias = net.layer1.bias.sub(b1);
+			net.layer2.weight = net.layer2.weight.sub(w2);
+			net.layer2.bias = net.layer2.bias.sub(b2);
 		}
 
-		if (i % 100 == 0) {
-			double t = net.accuracy(x_batch, t_batch);
-			printf("[%d] %f\n", i, t);
+		if ((i + 1) % 100 == 0) {
+			Matrix::real_t t = net.accuracy(x_batch, t_batch);
+			printf("[train %d] %f\n", i + 1, t);
 		}
 	}
 
-	return 0;
-}
-
-int main2()
-{
-	std::vector<char> vec;
-	if (!readfile("network.txt", &vec) || vec.empty()) {
-		fprintf(stderr, "failed to load the network file\n");
-	}
-
-	Network network;
 	{
-		char const *begin = vec.data();
-		char const *end = begin + vec.size();
-		network.parse(begin, end);
-	}
-
-	struct Model {
-		Layer layer1;
-		Layer layer2;
-		Layer layer3;
-	};
-
-	Model model;
-
-	auto LoadLayer = [&](std::string const &w_name, std::string const &b_name, Layer *layer){
-		if (!layer->load(network, w_name, b_name)) {
-			exit(1);
+		Matrix x_batch;
+		Matrix t_batch;
+		for (int j = 0; j < t10k.size(); j++) {
+			Matrix x, t;
+			t10k.image_to_matrix(j, &x);
+			t10k.label_to_matrix(j, &t);
+			x_batch.add_rows(x);
+			t_batch.add_rows(t);
 		}
-	};
-	LoadLayer("W1", "B1", &model.layer1);
-	LoadLayer("W2", "B2", &model.layer2);
-	LoadLayer("W3", "B3", &model.layer3);
-
-	Matrix in;
-	in.make(1, 28 * 28, testdata);
-
-	Matrix a1;
-	Matrix a2;
-	Matrix a3;
-	Matrix score;
-
-	in.dot(model.layer1.weight, &a1);
-	a1.add(model.layer1.bias);
-	a1.sigmoid();
-
-	a1.dot(model.layer2.weight, &a2);
-	a2.add(model.layer2.bias);
-	a2.sigmoid();
-
-	a2.dot(model.layer3.weight, &a3);
-	a3.add(model.layer3.bias);
-
-	a3.softmax(&score);
-
-	for (size_t i = 0; i < score.array.size(); i++) {
-		printf("[%2d] %3.6f\n", (int)i, score.array[i]);
+		Matrix::real_t t = net.accuracy(x_batch, t_batch);
+		printf("[t10k] %f\n", t);
 	}
 
 	return 0;
 }
+

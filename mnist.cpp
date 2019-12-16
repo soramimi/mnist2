@@ -2,6 +2,201 @@
 #include "rwfile.h"
 #include <string.h>
 
+Matrix::Matrix()
+{
+	d = std::make_shared<Data>();
+}
+
+Matrix::Matrix(const Matrix &r)
+{
+	d = std::make_shared<Data>();
+	*d = *r.d;
+}
+
+void Matrix::make(size_t r, size_t c)
+{
+	d->rows = r;
+	d->cols = c;
+	d->vals.clear();
+	d->vals.resize(d->rows * d->cols);
+}
+
+void Matrix::make(size_t r, size_t c, const std::initializer_list<Matrix::real_t> &list)
+{
+	d->rows = r;
+	d->cols = c;
+	d->vals.clear();
+	d->vals = list;
+}
+
+void Matrix::make(size_t r, size_t c, const Matrix::real_t *p)
+{
+	d->rows = r;
+	d->cols = c;
+	d->vals.clear();
+	d->vals.reserve(d->rows * d->cols);
+	for (auto i = 0U; i < d->rows; i++) {
+		for (auto j = 0U; j < d->cols; j++) {
+			d->vals.push_back(*p);
+			p++;
+		}
+	}
+}
+
+Matrix Matrix::transpose() const
+{
+	Matrix out;
+	out.make(d->cols, d->rows);
+	for (auto r = 0U; r < d->rows; r++) {
+		for (auto c = 0U; c < d->cols; c++) {
+			out.at(c, r) = at(r, c);
+		}
+	}
+	return out;
+}
+
+Matrix Matrix::dot(const Matrix &other) const
+{
+	Matrix out;
+	Matrix const &a = *this;
+	Matrix const &b = other;
+	auto n = a.d->cols;
+	if (n == b.d->rows) {
+		auto nrow = a.d->rows;
+		auto ncol = b.d->cols;
+		out.make(nrow, ncol);
+		for (auto col = 0U; col < ncol; col++) {
+			for (auto row = 0U; row < nrow; row++) {
+				for (auto i = 0U; i < n; i++) {
+					out.at(row, col) += a.at(row, i) * b.at(i , col);
+				}
+			}
+		}
+	}
+	return out;
+}
+
+Matrix Matrix::add(const Matrix &other) const
+{
+	Matrix out(*this);
+	size_t n = std::min(d->vals.size(), other.d->vals.size());
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] += other.d->vals[i];
+	}
+	return out;
+}
+
+Matrix Matrix::sub(const Matrix &other) const
+{
+	Matrix out(*this);
+	size_t n = std::min(d->vals.size(), other.d->vals.size());
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] -= other.d->vals[i];
+	}
+	return out;
+}
+
+Matrix Matrix::mul(const Matrix &other) const
+{
+	Matrix out(*this);
+	size_t n = std::min(d->vals.size(), other.d->vals.size());
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] *= other.d->vals[i];
+	}
+	return out;
+}
+
+Matrix Matrix::mul(Matrix::real_t t) const
+{
+	Matrix out(*this);
+	size_t n = d->vals.size();
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] *= t;
+	}
+	return out;
+}
+
+Matrix Matrix::div(Matrix::real_t t) const
+{
+	Matrix out(*this);
+	size_t n = d->vals.size();
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] /= t;
+	}
+	return out;
+}
+
+Matrix Matrix::sum() const
+{
+	Matrix out;
+	out.make(1, d->cols);
+	for (auto r = 0U; r < d->rows; r++) {
+		for (auto c = 0U; c < d->cols; c++) {
+			out.at(0, c) += at(r, c);
+		}
+	}
+	return out;
+}
+
+Matrix Matrix::sigmoid() const
+{
+	Matrix out;
+	out.make(d->rows, d->cols);
+	size_t n = d->vals.size();
+	for (size_t i = 0; i < n; i++) {
+		out.d->vals[i] = sigmoid(d->vals[i]);
+	}
+	return out;
+}
+
+Matrix Matrix::sigmoid_grad() const
+{
+	Matrix out;
+	out.make(d->rows, d->cols);
+	size_t n = d->vals.size();
+	for (size_t i = 0; i < n; i++) {
+		real_t v = sigmoid(d->vals[i]);
+		out.d->vals[i] = (1 - v) * v;
+	}
+	return out;
+}
+
+Matrix Matrix::softmax() const
+{
+	Matrix out;
+	out.make(d->rows, d->cols);
+	for (size_t r = 0; r < d->rows; r++) {
+		real_t c = 0;
+		for (size_t i = 0; i < d->cols; i++) {
+			c = std::max(c, at(r, i));
+		}
+		std::vector<real_t> exp_a(d->cols);
+		real_t sum_exp_a = 0;
+		for (size_t i = 0; i < d->cols; i++) {
+			real_t v = exp(at(r, i) - c);
+			exp_a[i] = v;
+			sum_exp_a += v;
+		}
+		for (size_t i = 0; i < d->cols; i++) {
+			out.at(r, i) = exp_a[i] / sum_exp_a;
+		}
+	}
+	return out;
+}
+
+void Matrix::add_rows(const Matrix &other)
+{
+	if (d->cols == 0 && d->rows == 0) {
+		make(0, other.d->cols);
+	}
+	if (d->cols == other.d->cols) {
+		d->rows += other.d->rows;
+		d->vals.insert(d->vals.end(), other.d->vals.begin(), other.d->vals.end());
+	}
+}
+
+//
+
 bool mnist::DataSet::image_to_matrix(int index, Matrix *out) const
 {
 	if (index < (int)data.images.size()) {
@@ -9,7 +204,7 @@ bool mnist::DataSet::image_to_matrix(int index, Matrix *out) const
 		auto &image = data.images[index];
 		out->make(1, data.rows * data.cols);
 		for (int i = 0; i < n; i++) {
-			out->array[i] = image[i] / 255.0;
+			out->data()[i] = image[i] / 255.0;
 		}
 		return true;
 	}
@@ -29,7 +224,7 @@ void mnist::DataSet::label_to_matrix(int index, Matrix *out) const
 	out->make(1, 10);
 	int v = label(index);
 	for (int i = 0; i < 10; i++) {
-		out->array[i] = (i == v);
+		out->data()[i] = (i == v);
 	}
 }
 
@@ -84,3 +279,4 @@ bool mnist::DataSet::load(const char *labels_path, const char *images_path)
 	}
 	return ok;
 }
+
